@@ -1,447 +1,167 @@
-# 🚀 SRE Linux Specialization Mastery
+# Laboratorio de Gobernanza Avanzada Multiambiente con IaC
 
-<div align="center">
+[![OpenTofu](https://img.shields.io/badge/OpenTofu-1.10%2B-844FBA?style=flat-square&logo=opentofu&logoColor=white)](https://opentofu.org/)
+[![Terragrunt](https://img.shields.io/badge/Terragrunt-DRY_IaC-5C4EE5?style=flat-square&logo=terraform&logoColor=white)](https://terragrunt.gruntwork.io/)
+[![AWS](https://img.shields.io/badge/AWS-Cloud_Provider-FF9900?style=flat-square&logo=amazonaws&logoColor=white)](https://aws.amazon.com/)
+[![TFLint](https://img.shields.io/badge/TFLint-Linter-2C3E50?style=flat-square)](https://github.com/terraform-linters/tflint)
+[![TFSec](https://img.shields.io/badge/TFSec-SAST_Security-E74C3C?style=flat-square)](https://github.com/aquasecurity/tfsec)
+[![Infracost](https://img.shields.io/badge/Infracost-FinOps-00D2B4?style=flat-square)](https://www.infracost.io/)
+[![License](https://img.shields.io/badge/Licencia-Educativa-lightgrey?style=flat-square)]()
 
-![SRE Specialization](https://img.shields.io/badge/Program-SRE%20Linux%20v2.0-2c3e50?style=for-the-badge&logo=linux&logoColor=white)
-![Status](https://img.shields.io/badge/Status-Active%20Development-27ae60?style=for-the-badge)
-![Version](https://img.shields.io/badge/Version-2.0.0-3498db?style=for-the-badge)
-[![License](https://img.shields.io/badge/License-Proprietary-e74c3c?style=for-the-badge)](./LICENSE)
-[![Last Update](https://img.shields.io/badge/Last%20Updated-2026-95a5a6?style=for-the-badge)](#)
+Este repositorio reúne un entorno de laboratorio pensado para practicar, de forma guiada, un pipeline completo de validación estática y gobernanza sobre Infraestructura como Código (IaC). El stack principal combina **OpenTofu / Terraform (v1.10 o superior)** y **Terragrunt** para orquestar recursos en Amazon Web Services (AWS) de manera segura, ordenada y sin duplicar configuración, siguiendo el principio DRY (*Don't Repeat Yourself*).
 
-![GitHub Issues](https://img.shields.io/badge/Issues-Open-f39c12?style=flat-square)
-![GitHub Stars](https://img.shields.io/badge/Stars-★★★★★-ffd700?style=flat-square)
-![Contributor](https://img.shields.io/badge/Contributor-SOFTRAINCORP-1abc9c?style=flat-square)
+La idea central del laboratorio es simple: antes de que cualquier recurso toque la nube, el código pasa por tres filtros independientes que revisan estilo, costo y seguridad. Este documento explica qué hace cada herramienta, por qué está en ese orden y cómo reproducir el flujo completo paso a paso.
 
----
+## Tabla de contenidos
 
-> **Transforma tu carrera**: De ingeniero de sistemas tradicional a **Cloud Architect / SRE Enterprise-Ready**
+- [Herramientas de la suite de auditoría](#herramientas-de-la-suite-de-auditoría)
+- [De tfsec a Trivy: hacia dónde va el ecosistema](#de-tfsec-a-trivy-hacia-dónde-va-el-ecosistema)
+- [Estructura del repositorio](#estructura-del-repositorio)
+- [Flujo de trabajo paso a paso](#flujo-de-trabajo-paso-a-paso)
+- [Buenas prácticas recomendadas](#buenas-prácticas-recomendadas)
+- [Público objetivo](#público-objetivo)
 
-Este repositorio es el **epicentro de la especialización SRE Linux v2.0**, consolidando toda la experiencia necesaria para dominar la ingeniería de confiabilidad de sistemas, automatización empresarial y observabilidad en infraestructuras modernas.
+## Herramientas de la suite de auditoría
 
-</div>
+El pipeline de este laboratorio no depende de una sola herramienta, sino de tres capas de control que se complementan entre sí. Cada una responde a una pregunta distinta sobre la infraestructura antes de que se despliegue.
 
----
+### 1. TFLint: el linter sintáctico
 
-## 📋 Tabla de Contenidos
+TFLint es la primera línea de defensa. Revisa que el código HCL siga buenas prácticas de estilo, detecta errores específicos del proveedor de AWS (por ejemplo, tipos de instancia inválidos) y encuentra fallos que el propio compilador de Terraform normalmente no reporta hasta el momento del apply.
 
-- [🎯 Objetivo](#-objetivo-del-repositorio)
-- [✨ Características Principales](#-características-principales)
-- [📦 Estructura del Repositorio](#-estructura-del-repositorio)
-- [🗺️ Fases de Aprendizaje](#-fases-de-aprendizaje)
-- [🚀 Quick Start](#-quick-start)
-- [📊 Requisitos Previos](#-requisitos-previos)
-- [🛠️ Stack Tecnológico](#-stack-tecnológico)
-- [📚 Documentación Completa](#-documentación-completa)
-- [🤝 Contribuciones](#-contribuciones)
-- [📞 Soporte](#-soporte)
-- [⚖️ Licencia y Acceso](#-licencia-y-acceso)
+Se ejecuta justo después de escribir o modificar cualquier archivo de configuración, como parte natural del ciclo de edición. Es rápido, barato en tiempo de cómputo y evita que errores triviales lleguen a etapas posteriores del pipeline.
 
----
+### 2. Infracost: gobernanza FinOps
 
-## 🎯 Objetivo del Repositorio
+Infracost analiza los archivos de configuración y genera una estimación detallada del impacto financiero mensual que tendrá el nuevo despliegue en la factura de AWS.
 
-Este repositorio actúa como la **Single Source of Truth (SSOT)** centralizada para:
+Su lugar en el flujo es antes de cualquier plan o apply, de modo que el equipo pueda validar si el presupuesto asignado al proyecto sigue siendo viable. En un contexto de aprendizaje, esta herramienta ayuda a construir el hábito de pensar en costos como parte del diseño, no como una sorpresa al final del mes.
 
-| Objetivo | Descripción |
-|----------|-------------|
-| 🏗️ **Infraestructura como Código** | Despliegues reproducibles, versionados y auditables con Terraform, Terragrunt y CloudFormation |
-| 🤖 **Automatización a Escala** | Configuration Management idempotente con Ansible para miles de nodos |
-| 🔍 **Observabilidad Empresarial** | Implementación de stacks de monitoreo, logging y distributed tracing |
-| 🐧 **Linux Hardening Avanzado** | Auditoría forense, tunning de kernel y seguridad bajo estándares Enterprise |
-| 🎯 **Runbooks Operacionales** | Procedimientos documentados para incidentes, escalamiento y troubleshooting |
-| 📈 **Arquitecturas Multi-Cloud** | Patrones de deployments en AWS, Azure y GCP con alta disponibilidad |
+### 3. TFSec: el escáner de seguridad SAST
 
----
+TFSec realiza un análisis estático de seguridad orientado a detectar configuraciones inseguras: brechas perimetrales, buckets de S3 expuestos públicamente, ausencia de cifrado en reposo, políticas de IAM demasiado permisivas, entre otros patrones de riesgo conocidos.
 
-## ✨ Características Principales
+Se ejecuta justo antes del despliegue, funcionando como el guardián de cumplimiento (compliance) de la cuenta. Ningún recurso debería llegar a producción sin pasar por este control.
 
-```
-┌─────────────────────────────────────────────────────────────────┐
-│                   ESPECIALIZACIÓN SRE v2.0                      │
-├─────────────────────────────────────────────────────────────────┤
-│ ✅ Scripts idempotentes y production-ready                      │
-│ ✅ IaC con versionado y validación automática                   │
-│ ✅ Playbooks Ansible optimizados para escala                    │
-│ ✅ Runbooks con procedimientos paso a paso                      │
-│ ✅ Laboratorios prácticos con entornos reales                   │
-│ ✅ Configuraciones de seguridad bajo CIS Benchmarks            │
-│ ✅ Documentación técnica de nivel Enterprise                    │
-│ ✅ Mejores prácticas de observabilidad y SRE                    │
-└─────────────────────────────────────────────────────────────────┘
-```
+## De tfsec a Trivy: hacia dónde va el ecosistema
 
----
+Nota de ingeniería de plataforma, 2026.
 
-## 📦 Estructura del Repositorio
+Este laboratorio utiliza el binario tradicional de tfsec por motivos didácticos, ya que permite observar de forma aislada el comportamiento del escáner de seguridad. Sin embargo, es importante que quien complete este laboratorio conozca el contexto actual de la herramienta: tfsec fue integrado oficialmente dentro de Trivy, el proyecto de Aqua Security.
 
-```
-sre-linux-specialization/
-│
-├── 📄 README.md                          # Este archivo
-├── 📄 LICENSE                            # Acceso exclusivo SOFTRAINCORP
-├── 📄 CONTRIBUTING.md                    # Guía de contribución
-│
-├── 📁 phase0-onboarding/                 # [INICIO] Preparación del Entorno
-│   ├── README.md
-│   ├── sre_phase0_bootstrap.sh           # Script de instalación idempotente
-│   ├── environment_check.md              # Checklist de requisitos
-│   └── tools_installation.sh             # Setup de herramientas modernas
-│
-├── 📁 phase1-linux-core/                 # [CORE] Linux Deep Dive
-│   ├── README.md
-│   ├── hardening/
-│   ├── kernel-tuning/
-│   ├── forensics/
-│   └── runbooks/
-│
-├── 📁 phase2-iac/                        # [IaC] Infraestructura como Código
-│   ├── README.md
-│   ├── terraform/
-│   ├── terragrunt/
-│   ├── cloudformation/
-│   └── validation/
-│
-├── 📁 phase3-automation/                 # [AUTOMATION] Configuration Management
-│   ├── README.md
-│   ├── ansible/
-│   ├── roles/
-│   ├── playbooks/
-│   └── tests/
-│
-├── 📁 phase4-containers/                 # [CONTAINERS] Containerización
-│   ├── README.md
-│   ├── docker/
-│   ├── kubernetes/
-│   ├── registry/
-│   └── orchestration/
-│
-└── 📁 phase5-project/                    # [CAPSTONE] Proyecto Final
-    ├── README.md
-    ├── architecture/
-    ├── deployment/
-    ├── monitoring/
-    └── validation/
+Mientras que tfsec se limita exclusivamente al análisis de archivos con extensión .tf, Trivy actúa como un escáner de seguridad universal. Hereda por completo el conjunto de reglas de evaluación de tfsec y además extiende la auditoría hacia imágenes de contenedores Docker, manifiestos de Kubernetes, detección de secretos expuestos en el código y análisis de vulnerabilidades conocidas (CVEs) en dependencias de software.
+
+En los pipelines corporativos modernos, la tendencia es clara: la mayoría de los equipos ya se está moviendo hacia el uso exclusivo del comando `trivy config .` en lugar de invocar tfsec de forma independiente. Vale la pena practicar ambos enfoques para entender por qué ocurrió esta consolidación de herramientas.
+
+## Estructura del repositorio
+
+```text
+.
+├── root.hcl                     # Configuración global y backend remoto (S3 Native Locking)
+├── modules/
+│   └── s3_app/                  # Módulo base de la aplicación (bucket S3 condicional)
+│       └── main.tf
+├── environments/
+│   ├── dev/                     # Entorno de desarrollo (inyección de variables locales)
+│   │   └── terragrunt.hcl
+│   └── prod/                    # Entorno de producción (blindado por defecto)
+│       └── terragrunt.hcl
+├── scripts/
+│   ├── create_backend.sh        # Inicializador idempotente del backend de estado en S3
+│   ├── destroy_backend.sh       # Purga de versiones de S3 y remoción del backend
+│   └── audit_infrastructure.sh  # Script de detección de recursos activos en AWS
+└── laboratorios_previos/        # Respaldo de archivos históricos del curso
 ```
 
----
+Cada carpeta cumple una función concreta dentro del laboratorio:
 
-## 🗺️ Fases de Aprendizaje
+- **root.hcl** centraliza la configuración de Terragrunt para evitar repetirla en cada entorno.
+- **modules/s3_app** contiene la lógica reutilizable del bucket S3, incluyendo el interruptor `vulnerable_mode` que se usa para practicar la detección de fallos de seguridad.
+- **environments/** separa dev y prod, de modo que cada entorno pueda tener su propia configuración sin tocar el módulo base.
+- **scripts/** automatiza las tareas de infraestructura de soporte (backend remoto) y de auditoría forense posterior al despliegue.
 
-Las fases están diseñadas como una **secuencia progresiva y correlativa**. Cada fase consolida conceptos previos e introduce nuevas competencias.
+## Flujo de trabajo paso a paso
 
-### **Fase 0: Onboarding & Setup** 🔧
-**Duración Estimada:** 1-2 semanas
+Para reproducir este laboratorio o validar cambios sin generar condiciones de carrera ni desajustes de estado (drift), es importante seguir este orden de forma estricta. Cada fase depende de que la anterior haya terminado correctamente.
 
-Preparación integral del entorno de trabajo para garantizar que todos los estudiantes comienzan con los mismos requisitos técnicos.
+### Fase 1: inicialización de la arquitectura de soporte
+
+Posiciónate en la raíz del proyecto y levanta el backend centralizado de estados remotos, con bloqueo nativo de S3 (sin necesidad de DynamoDB):
 
 ```bash
-Habilidades:
-  ✓ Instalación de Ubuntu 24.04 LTS
-  ✓ Setup de herramientas modernas (Rust, Go, Node.js)
-  ✓ Configuración de Git y GitHub
-  ✓ Ambiente de desarrollo de primer nivel
+./scripts/create_backend.sh
 ```
 
-📖 **[Ir a Phase 0 →](./phase0-onboarding/README.md)**
+### Fase 2: ciclo de validación en el entorno de desarrollo
 
----
-
-### **Fase 1: Linux Deep Dive** 🐧
-**Duración Estimada:** 3-4 semanas
-
-Dominio profundo del kernel Linux, hardening enterprise y auditoría forense de sistemas.
+Muévete al directorio del entorno de desarrollo:
 
 ```bash
-Habilidades:
-  ✓ Linux Kernel tuning y optimización
-  ✓ Seguridad: CIS Benchmarks, AppArmor, SELinux
-  ✓ Performance analysis y flame graphs
-  ✓ Forensics: análisis de logs y recuperación de datos
-  ✓ System hardening para producción
+cd environments/dev
 ```
 
-📖 **[Ir a Phase 1 →](./phase1-linux-core/README.md)**
-
----
-
-### **Fase 2: IaC Mastery** 🏗️
-**Duración Estimada:** 3-4 semanas
-
-Infraestructura como código con Terraform, Terragrunt y validación automática para AWS, Azure y GCP.
+Como ejercicio de práctica, configura `vulnerable_mode = true` en el módulo base y observa cómo tfsec detiene el pipeline al reportar alertas críticas:
 
 ```bash
-Habilidades:
-  ✓ Terraform: módulos, estados, variables
-  ✓ Terragrunt: DRY, entornos múltiples
-  ✓ CloudFormation en AWS
-  ✓ Validación, testing y CI/CD para IaC
-  ✓ Multi-cloud deployment patterns
+tfsec .terragrunt-cache/
 ```
 
-📖 **[Ir a Phase 2 →](./phase2-iac/README.md)**
-
----
-
-### **Fase 3: Configuration Management** 🤖
-**Duración Estimada:** 3-4 semanas
-
-Automatización idempotente a escala empresarial con Ansible, diseñada para gestionar miles de nodos.
+Aplica la mitigación correspondiente, ajustando `vulnerable_mode = false` tanto en el `terragrunt.hcl` del entorno como en el valor por defecto del módulo. Luego limpia las cachés, refresca el entorno y confirma que el pipeline queda en verde:
 
 ```bash
-Habilidades:
-  ✓ Playbooks y roles Ansible avanzados
-  ✓ Idempotencia y atomicidad
-  ✓ Gestión de configuraciones multi-entorno
-  ✓ Testing y validación de playbooks
-  ✓ Orchestración de cambios en producción
+rm -rf .terragrunt-cache/ .infracost/
+terragrunt init
+tfsec .terragrunt-cache/
 ```
 
-📖 **[Ir a Phase 3 →](./phase3-automation/README.md)**
+Si todo salió bien, deberías ver el mensaje de "sin problemas detectados" antes de continuar a la siguiente fase.
 
----
+### Fase 3: despliegue y auditoría activa
 
-### **Fase 4: Containerization** 🐳
-**Duración Estimada:** 3-4 semanas
-
-Microservicios, resiliencia y orquestación con Docker y Kubernetes.
+Con la validación en verde, aplica la infraestructura aprobada:
 
 ```bash
-Habilidades:
-  ✓ Docker: imágenes optimizadas, multi-stage builds
-  ✓ Docker Compose para entornos locales
-  ✓ Kubernetes: deployment, scaling, networking
-  ✓ Helm charts y package management
-  ✓ Observabilidad en contenedores
+terragrunt apply --auto-approve
 ```
 
-📖 **[Ir a Phase 4 →](./phase4-containers/README.md)**
-
----
-
-### **Fase 5: Final Project** 🎯
-**Duración Estimada:** 4-6 semanas
-
-Proyecto integrador: arquitectura Multi-Cloud de alta disponibilidad, automatización completa y observabilidad empresarial.
+Verifica de forma independiente que los recursos quedaron realmente activos en la cuenta, usando el script forense:
 
 ```bash
-Capstone:
-  ✓ Diseño de arquitectura resiliente
-  ✓ Despliegue multi-cloud automatizado
-  ✓ Implementación de SLOs y SLIs
-  ✓ Disaster recovery y failover
-  ✓ Presentación y auditoría final
+../../scripts/audit_infrastructure.sh
 ```
 
-📖 **[Ir a Phase 5 →](./phase5-project/README.md)**
+Este paso es clave para el aprendizaje: no basta con confiar en la salida de Terragrunt, sino que conviene comprobar el estado real de los recursos desde afuera del pipeline.
 
----
+### Fase 4: desmantelamiento antidegradación
 
-## 🚀 Quick Start
-
-### **Opción 1: Bootstrap Automático**
+Destruye primero los recursos de la aplicación, para evitar dejar recursos huérfanos o "zombis":
 
 ```bash
-# Clona el repositorio
-git clone https://github.com/softraincorp/sre-linux-specialization.git
-cd sre-linux-specialization
-
-# Ejecuta el script de fase 0 (requiere Ubuntu 24.04)
-cd phase0-onboarding
-bash sre_phase0_bootstrap.sh
-
-# Verifica tu entorno
-bash environment_check.sh
+terragrunt destroy --auto-approve
 ```
 
-### **Opción 2: Setup Manual**
+Regresa a la raíz del proyecto y elimina el backend, limpiando también su historial de versiones indexadas:
 
 ```bash
-# Pre-requisitos
-- Ubuntu 24.04 LTS o superior
-- Git 2.40+
-- 10GB de espacio en disco
-- Conexión a internet estable
-
-# Sigue la guía paso a paso
-cat phase0-onboarding/README.md
+cd ../..
+./scripts/destroy_backend.sh
 ```
 
----
+Por último, certifica que la cuenta de AWS quedó completamente limpia, ejecutando de nuevo el script de auditoría:
 
-## 📊 Requisitos Previos
-
-| Requisito | Versión Mínima | Verificar |
-|-----------|-----------------|-----------|
-| **OS** | Ubuntu 24.04 LTS | `lsb_release -a` |
-| **Git** | 2.40+ | `git --version` |
-| **Bash** | 5.1+ | `bash --version` |
-| **RAM** | 8GB | `free -h` |
-| **Espacio Disco** | 20GB | `df -h` |
-| **CPU** | 4 cores | `nproc` |
-
-**Herramientas que se instalarán automáticamente:**
-- Rust (latest stable)
-- Go 1.21+
-- Node.js 20+
-- Docker & Docker Compose
-- Terraform & Terragrunt
-- Ansible
-- kubectl & Helm
-- jq, yq, aws-cli, azure-cli
-
----
-
-## 🛠️ Stack Tecnológico
-
-<div align="center">
-
-![Linux](https://img.shields.io/badge/Linux-FCC624?style=for-the-badge&logo=linux&logoColor=black)
-![Terraform](https://img.shields.io/badge/Terraform-844FBA?style=for-the-badge&logo=terraform&logoColor=white)
-![Ansible](https://img.shields.io/badge/Ansible-EE0000?style=for-the-badge&logo=ansible&logoColor=white)
-![Docker](https://img.shields.io/badge/Docker-2496ED?style=for-the-badge&logo=docker&logoColor=white)
-![Kubernetes](https://img.shields.io/badge/Kubernetes-326CE5?style=for-the-badge&logo=kubernetes&logoColor=white)
-![AWS](https://img.shields.io/badge/AWS-FF9900?style=for-the-badge&logo=amazonaws&logoColor=white)
-![Azure](https://img.shields.io/badge/Azure-0078D4?style=for-the-badge&logo=microsoftazure&logoColor=white)
-![GCP](https://img.shields.io/badge/GCP-4285F4?style=for-the-badge&logo=googlecloud&logoColor=white)
-
-</div>
-
-**Infraestructura & IaC:**
-- Terraform & Terragrunt (provisioning)
-- CloudFormation (AWS nativo)
-- Pulumi (IaC alternatives)
-
-**Automatización & Configuration:**
-- Ansible (configuration management)
-- Bash & Python (scripting)
-- systemd (service management)
-
-**Containerización & Orquestación:**
-- Docker (containerization)
-- Docker Compose (local orchestration)
-- Kubernetes (production orchestration)
-- Helm (K8s package management)
-
-**Cloud Providers:**
-- AWS (EC2, RDS, S3, VPC, etc.)
-- Azure (VMs, App Service, databases)
-- GCP (Compute Engine, Cloud SQL)
-
-**Observabilidad:**
-- Prometheus (metrics)
-- ELK Stack (logging)
-- Jaeger (distributed tracing)
-- Grafana (visualization)
-
----
-
-## 📚 Documentación Completa
-
-Cada fase cuenta con documentación detallada:
-
-| Fase | README | Objetivo | Prerequisitos |
-|------|--------|----------|---------------|
-| **Phase 0** | [Onboarding](./phase0-onboarding/README.md) | Setup inicial | - |
-| **Phase 1** | [Linux Core](./phase1-linux-core/README.md) | Linux mastery | Phase 0 ✓ |
-| **Phase 2** | [IaC](./phase2-iac/README.md) | Infraestructura como código | Phase 1 ✓ |
-| **Phase 3** | [Automation](./phase3-automation/README.md) | Configuration management | Phase 2 ✓ |
-| **Phase 4** | [Containers](./phase4-containers/README.md) | Containerización | Phase 3 ✓ |
-| **Phase 5** | [Project](./phase5-project/README.md) | Capstone final | Phase 4 ✓ |
-
----
-
-## 🤝 Contribuciones
-
-Este repositorio es de **acceso exclusivo** para estudiantes registrados en SOFTRAINCORP. Sin embargo, las contribuciones internas son bienvenidas:
-
-1. **Reporte de Bugs:** Abre una issue con detalles
-2. **Mejoras:** Fork → rama nueva → pull request
-3. **Documentación:** Correcciones y clarificaciones son esenciales
-
-Para más detalles, consulta [CONTRIBUTING.md](./CONTRIBUTING.md)
-
----
-
-## 📞 Soporte
-
-| Canal | Contacto | Respuesta |
-|-------|----------|-----------|
-| **Issues** | [GitHub Issues](../../issues) | 24-48 horas |
-| **Email** | `sre-support@softraincorp.com` | 24 horas |
-| **Slack** | `#sre-specialization` | En vivo |
-| **Office Hours** | Viernes 10:00-11:00 UTC-3 | Semanal |
-
----
-
-## ⚖️ Licencia y Acceso
-
-```
-┌──────────────────────────────────────────────────────────────────┐
-│                     ACCESO EXCLUSIVO                             │
-│                                                                  │
-│  © 2026 SOFTRAINCORP. Todos los derechos reservados.            │
-│  Este repositorio contiene material educativo propietario.      │
-│  Prohibido: clonar, distribuir, vender o modificar sin         │
-│  autorización explícita.                                         │
-│                                                                  │
-│  Acceso permitido únicamente para:                              │
-│  ✓ Estudiantes activos registrados                             │
-│  ✓ Instructores SOFTRAINCORP                                   │
-│  ✓ Personal autorizado de auditoría                            │
-│                                                                  │
-│  Violaciones serán reportadas a legal@softraincorp.com          │
-└──────────────────────────────────────────────────────────────────┘
+```bash
+./scripts/audit_infrastructure.sh
 ```
 
-**Licencia Completa:** [LICENSE](./LICENSE)
+## Buenas prácticas recomendadas
 
----
+- Ejecuta TFLint apenas termines de editar cualquier archivo HCL; corregir errores pequeños al momento es mucho más barato que arrastrarlos hasta el plan o el apply.
+- No saltees la fase de Infracost solo porque el entorno es de desarrollo. Acostumbrarse a revisar el costo estimado es un hábito que se traslada directamente a producción.
+- Trata cada alerta de TFSec como un caso de estudio, no como un obstáculo. Entender por qué una configuración es insegura vale más que simplemente silenciar la regla.
+- Considera migrar los comandos de este laboratorio hacia `trivy config .` una vez que te sientas cómodo con el flujo tradicional de tfsec, para familiarizarte con la herramienta que está reemplazando gradualmente al binario original.
+- Nunca destruyas el backend antes que los recursos de la aplicación; el orden de la Fase 4 evita dejar infraestructura huérfana en la cuenta.
 
-## 🎓 Estadísticas de Aprendizaje
+## Público objetivo
 
-```
-📊 Contenido Total:
-   • ~500+ scripts y configuraciones
-   • ~100+ runbooks operacionales
-   • ~50+ laboratorios prácticos
-   • ~200+ horas de contenido
-   
-🚀 Competencias Alcanzadas:
-   • Cloud Architecture (AWS, Azure, GCP)
-   • SRE Enterprise-Ready
-   • Infrastructure as Code Mastery
-   • Automation & Orchestration
-   • Observability & Monitoring
-   
-💼 Salidas Laborales:
-   • Cloud Architect
-   • DevOps Engineer
-   • SRE (Site Reliability Engineer)
-   • Infrastructure Engineer
-   • Security Engineer (Cloud/Linux)
-```
-
----
-
-## 🔗 Enlaces Rápidos
-
-- 📖 [Documentación Principal](./docs/)
-- 🐛 [Reportar Bugs](../../issues/new?assignees=&labels=bug&template=bug_report.md)
-- 💡 [Solicitar Mejoras](../../issues/new?assignees=&labels=enhancement&template=feature_request.md)
-- 📮 [Contacto](mailto:sre-support@softraincorp.com)
-- 🌐 [Web SOFTRAINCORP](https://softraincorp.com)
-
----
-
-<div align="center">
-
-### Hecho con ❤️ por **SOFTRAINCORP**
-
-**Transforma tu carrera. Domina la infraestructura moderna. Sé un SRE de referencia.**
-
-![Footer](https://img.shields.io/badge/Version-2.0.0-blue?style=flat-square)
-![Last Updated](https://img.shields.io/badge/Updated-April%202026-brightgreen?style=flat-square)
-![Status](https://img.shields.io/badge/Status-Active-success?style=flat-square)
-
-</div>
+Este material fue preparado como documentación de control de calidad técnica para la Especialización SRE Linux. Está pensado tanto para quienes se acercan por primera vez a Terragrunt y a los escáneres de seguridad estática, como para quienes ya conocen el ecosistema y buscan un entorno de práctica reproducible antes de llevar estos controles a un pipeline productivo.
 
