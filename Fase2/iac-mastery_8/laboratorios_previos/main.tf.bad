@@ -1,0 +1,22 @@
+provider "aws" {
+  region = "us-east-1"
+}
+
+# 1. Error de estilo/linter: Tipo de instancia inválido o mal optimizado
+resource "aws_instance" "servidor_web" {
+  ami           = "ami-0c55b159cbfafe1f0"
+  instance_type = "t2.microo" # Error de tipeo deliberado
+
+  # 2. Error grave de seguridad: Puerto 22 (SSH) abierto a todo internet
+  ingress {
+    from_port   = 22
+    to_port     = 22
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"] 
+  }
+}
+
+# 3. Error de seguridad: Bucket S3 público y sin cifrar
+resource "aws_s3_bucket" "datos_sensibles" {
+  bucket = "mi-bucket-secreto-super-inseguro"
+}

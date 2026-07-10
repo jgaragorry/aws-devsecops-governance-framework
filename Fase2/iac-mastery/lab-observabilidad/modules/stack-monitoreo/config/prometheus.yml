@@ -1,0 +1,8 @@
+global:
+  scrape_interval: 5s
+
+scrape_configs:
+  - job_name: 'prometheus'
+    static_configs:
+      # 🌟 SOLUCIÓN: Escuchar en la interfaz abierta de Docker para evitar el bloqueo del loopback
+      - targets: ['0.0.0.0:9090']

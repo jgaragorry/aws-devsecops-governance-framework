@@ -1,0 +1,81 @@
+# Solución TFLint: Bloque terraform con versiones requeridas
+terraform {
+  required_version = ">= 1.5.0"
+  required_providers {
+    aws = {
+      source  = "hashicorp/aws"
+      version = "~> 5.0"
+    }
+  }
+}
+
+provider "aws" {
+  region = "us-east-1"
+}
+
+# Solución TFLint y TFSec para la Instancia EC2
+resource "aws_instance" "servidor_web" {
+  ami           = "ami-0c55b159cbfafe1f0"
+  instance_type = "t2.micro" # CORREGIDO: t2.microo -> t2.micro
+
+  # Solución TFSec: Habilitar cifrado KMS en el volumen raíz (EBS)
+  root_block_device {
+    encrypted = true
+  }
+
+  # Solución TFSec: Forzar el uso de tokens seguros IMDSv2
+  metadata_options {
+    http_endpoint = "enabled"
+    http_tokens   = "required"
+  }
+}
+
+# NOTA DE CLASE: El bloque 'ingress' dentro de 'aws_instance' es una mala práctica heredada.
+# Para producción, enseñe a usar el recurso independiente 'aws_security_group'.
+resource "aws_security_group" "web_sg" {
+  name        = "web-server-sg"
+  description = "Security group seguro para el servidor web"
+
+  # CORREGIDO: En lugar de 0.0.0.0/0, restringir a una IP de la empresa o VPN corporativa
+  ingress {
+    from_port   = 22
+    to_port     = 22
+    protocol    = "tcp"
+    cidr_blocks = ["192.168.1.0/24"] # Ejemplo: Red interna segura
+  }
+}
+
+# =========================================================================
+# Solución TFSec para el Bucket S3 Seguro
+# =========================================================================
+
+resource "aws_s3_bucket" "datos_sensibles" {
+  bucket = "mi-bucket-secreto-totalmente-seguro"
+}
+
+# 1. Solución TFSec: Forzar bloqueo completo de acceso público
+resource "aws_s3_bucket_public_access_block" "block_public" {
+  bucket                  = aws_s3_bucket.datos_sensibles.id
+  block_public_acls       = true
+  block_public_policy     = true
+  ignore_public_acls      = true
+  restrict_public_buckets = true
+}
+
+# 2. Solución TFSec: Habilitar cifrado por defecto (Server-Side Encryption)
+resource "aws_s3_bucket_server_side_encryption_configuration" "crypto" {
+  bucket = aws_s3_bucket.datos_sensibles.id
+  rule {
+    apply_server_side_encryption_by_default {
+      sse_algorithm = "AES256"
+    }
+  }
+}
+
+# 3. Solución TFSec (Medium): Habilitar Versionamiento
+resource "aws_s3_bucket_versioning" "versioning" {
+  bucket = aws_s3_bucket.datos_sensibles.id
+  versioning_configuration {
+    status = "Enabled"
+  }
+}

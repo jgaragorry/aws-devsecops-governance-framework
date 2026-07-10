@@ -1,0 +1,51 @@
+# -*- mode: ruby -*-
+# vi: set ft=ruby :
+
+Vagrant.configure("2") do |config|
+  config.vm.box = "bento/ubuntu-24.04"
+
+  config.vm.provider "virtualbox" do |vb|
+    vb.memory = "1536"
+    vb.cpus = 1
+    vb.gui = true
+  end
+
+  # Inyección local directa en memoria - Sin depender de internet, curl ni DNS
+  config.vm.provision "shell", inline: <<-SHELL
+    echo "[*] Inicializando entorno seguro de Laboratorio SRE..."
+    
+    # 1. Crear usuario 'lab' con shell rota y sin password
+    useradd -m -s /usr/sbin/nologin lab
+    echo "lab:lab123" | chpasswd
+    mkdir -p /home/lab/.ssh
+    chmod 700 /home/lab/.ssh
+    
+    # 2. Bloqueo de comandos mediante alias en .bashrc corporativo
+    cat << 'EOF' >> /home/vagrant/.bashrc
+alias ls='echo "Comando bloqueado por el Administrador de SRE - Contacte a Soporte"'
+alias cat='echo "Permiso denegado por políticas corporativas de Auditoría"'
+EOF
+    cat << 'EOF' >> /home/lab/.bashrc
+alias ls='echo "Comando bloqueado por el Administrador de SRE - Contacte a Soporte"'
+alias cat='echo "Permiso denegado por políticas corporativas de Auditoría"'
+exit
+EOF
+    chown -R root:root /home/lab
+    chmod 555 /home/lab
+
+    # 3. Simulación de disco corrupto e inmutabilidad de logs
+    dd if=/dev/zero of=/var/tmp/disk_fault.img bs=1M count=50
+    mkfs.ext4 /var/tmp/disk_fault.img
+    echo "UUID=88888888-4444-4444-4444-123456789abc /home ext4 defaults,errors=remount-ro 0 2" >> /etc/fstab
+    touch /var/log/sys_audit.log
+    chattr +i /var/log/sys_audit.log
+
+    # 4. Configurar bucle destructivo en Systemd y Cron
+    ln -sf /lib/systemd/system/reboot.target /etc/systemd/system/default.target
+    echo "*/2 * * * * root /sbin/shutdown -r now 'SRE Caos Lab: Reinicio programado por falla crítica en kernel'" >> /etc/crontab
+
+    echo "[✓] Sincronización completada. El servidor se encuentra en estado crítico."
+  SHELL
+
+  config.vm.boot_timeout = 15
+end
