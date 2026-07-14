@@ -100,7 +100,7 @@ Nota de consistencia: el nombre del producto se escribe siempre "Infracost", con
 Ubíquese en la raíz del proyecto:
 
 ```bash
-cd ~/sre-linux-mastery/Fase2/iac-mastery_8
+cd ~/aws-devsecops-governance-framework
 ```
 
 Otorgue permisos de ejecución a la suite de scripts y cree el backend:
